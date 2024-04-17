@@ -61,15 +61,15 @@ IMAGE IMAGE IMAGE
 
 - Disable getty
 ```
-System Configuration 
-(Disable "Run a getty (login prompt) after boot")
+System Configuration ==> Run a getty (login prompt) after boot --> No
 ```
 
 - Setup a root password. Without this the SSH connection can't be stablished!: 
 ```
-System Configuration ==> Root password
-(Type any password string (If using locally, to avoid any keyboard config issues on the RPI try to keep it simple.))
+System Configuration ==> Root password -> <Password>
 ```
+**Note:** Change <Password> with desired string (If using locally, try to avoid any keyboard config issues on the RPI by keeping it simple).
+
 You can go back to the main menu pressing ```ESC``` twice.
 
 - Enable **DHCP** and **Dropbear**:
