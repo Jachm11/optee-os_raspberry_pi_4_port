@@ -154,8 +154,9 @@ Device Drivers ==> Trusted Execution Environment support --> Yes
 In order for optee to correctly run on the RPI4 support for tge BL32 must be addded. 
 To avoid version conflicts a specific commit of the ARM Trusted Firmware is suggested here (most recent commit as of ```April 2024```):
 
+Move to the OPTEE-RPI4 directory and clone the repo:
 ```
-cd OPTEE-RPI4
+cd ../ 
 git clone https://github.com/ARM-software/arm-trusted-firmware
 
 cd arm-trusted-firmware/
@@ -164,10 +165,7 @@ git reset --hard 0cf4fda
 cd plat/rpi/common
 ```
 
-Next open the rpi4_bl31_setup.c and navigate to the bl31_early_platform_setup2 function:
-```
-code rpi4_bl31_setup.c
-```
+Next open the ```rpi4_bl31_setup.c``` and navigate to the bl31_early_platform_setup2 function:
 
 Replace the function with the following code (or copy the whole file on this repo [here](link)): 
 ```
@@ -227,6 +225,127 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 ```
 
 # Step 3: Update the ARM Trusted Firmware
+
+First, we need to download the existing OPTEE Trusted OS from the official OPTEE Github website:
+Same as before a specific commit is suggested: 
+
+Move to the OPTEE-RPI4 directory and clone the repo:
+```
+cd ../../../../
+git clone https://github.com/OP-TEE/optee_os
+
+cd optee_os
+git reset --hard 6376023
+```
+
+Next, execute the following command to create a new platform for the Raspberry Pi 4 based on the previsous version:
+```
+cd optee_os/core/arch/arm
+cp -rf plat-rpi3 plat-rpi4
+
+cd plat-rpi4
+ls
+```
+Now, you should see four files ```conf.mk```,```main.c```,```platform_config.h``` and ```sub.mk```.
+
+Open the ```platform_config.h``` file (also [here](link)). Two things must be changed in the file. These things are:
+
+```
+The UART base address: 0xfe215040
+The UART Clock Frequency: 48000000
+```
+
+# Step 4: Compile the ARM Trusted Firmware and the Trusted OS
+
+First we need the right ARM aarch64 toolchains. Check [Toolchains](https://optee.readthedocs.io/en/latest/building/toolchains.html)
+
+Go back to the OPTEE-RPI4 directory and download the toolchain:
+```
+cd ../../../../../
+mkdir toolchains
+cd toolchains/
+wget https://developer.arm.com/-/media/Files/downloads/gnu-a/8.2-2019.01/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
+mkdir aarch64
+tar xf gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz -C aarch64 --strip-components=1
+```
+Now we need to add this new binaries to our ```PATH```:
+
+Run:
+```
+export PATH=/.../OPTEE-RPI4/toolchains/aarch64/bin:$PATH
+```
+
+Then create and copy [this](link) makefile on your OPTEE-RPI4 working directory.
+
+```
+cd ../
+touch Makefile
+```
+Open the make file and copy this. Be sure to change the ```DIR := ``` statement to the path of your working directory, in my case I used Documents:
+```
+# Define the paths
+DIR := /home/user/Documents
+OPTEE_DIR := ${DIR}/OPTEE-RPI4
+TFA_DIR := ${OPTEE_DIR}/arm-trusted-firmware
+RPI4_TFA_DIR := ${TFA_DIR}/plat/rpi/rpi4
+OPTEE_OS_DIR := ${OPTEE_DIR}/optee_os
+
+.PHONY: all clean
+
+all: 	
+	# Compile the ARM Trusted Firmware
+	@echo "Compiling the ARM Trusted Firmware"
+	make -C ${TFA_DIR} \
+	  CROSS_COMPILE=${DIR}/OPTEE-RPI4/toolchains/aarch64/bin/aarch64-none-linux-gnu- \
+	  PLAT=rpi4 \
+	  SPD=opteed \
+	  DEBUG=1
+
+	# Compile the Trusted OS
+	@echo "Compiling the Trusted OS"
+	make -C ${OPTEE_OS_DIR} \
+	  CROSS_COMPILE=${DIR}/OPTEE-RPI4/toolchains/aarch64/bin/aarch64-none-linux-gnu- \
+	  PLATFORM=rpi4 \
+	  CFG_ARM64_core=y \
+	  CFG_USER_TA_TARGETS=ta_arm64 \
+	  CFG_DT=y
+
+	# Change to the ARM Trusted Firmware directory to access the 'bl31.bin'
+	mkdir -p ${RPI4_TFA_DIR}/build
+
+	# Copy the binary
+	cp ${TFA_DIR}/build/rpi4/debug/bl31.bin ${OPTEE_DIR}/bl31-pad.tmp
+
+	# Truncate the binary to 128k bytes
+	truncate --size=128K ${OPTEE_DIR}/bl31-pad.tmp
+
+	# Concatenate the bl31 with the bl32 (or tee-pager_v2)
+	cat ${OPTEE_DIR}/bl31-pad.tmp ${OPTEE_OS_DIR}/out/arm-plat-rpi4/core/tee-pager_v2.bin > ${OPTEE_DIR}/bl31-bl32.bin
+	rm ${OPTEE_DIR}/bl31-pad.tmp
+	@echo "Success"
+	
+clean:
+	# Clean the ARM Trusted Firmware
+	@echo "Cleaning the ARM Trusted Firmware"
+	make -C ${TFA_DIR} clean
+	
+	# Clean the Trusted OS
+	@echo "Cleaning the Trusted OS"
+	make -C ${OPTEE_OS_DIR} clean
+	
+	@echo "Success"
+```
+
+
+
+Then simply run: 
+
+```
+make
+```
+This Makefile is responsible to not only to compile the ARM Trusted Firmware and the Trusted OS, but also to concatenate this two binaries into one binary to be loaded in the memory.
+
+
 
 
 
