@@ -274,9 +274,9 @@ Run:
 ```
 export PATH=/.../OPTEE-RPI4/toolchains/aarch64/bin:$PATH
 ```
+Make sure to change it to your working directory path.
 
 Then create and copy [this](link) makefile on your OPTEE-RPI4 working directory.
-
 ```
 cd ../
 touch Makefile
