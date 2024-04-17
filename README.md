@@ -336,14 +336,32 @@ clean:
 	@echo "Success"
 ```
 
-
+You can run ```ls``` and check your dictectory looks like this:
+```
+arm-trusted-firmware
+buildroot
+Makefile
+optee_os
+toolchains
+```
 
 Then simply run: 
-
 ```
 make
 ```
-This Makefile is responsible to not only to compile the ARM Trusted Firmware and the Trusted OS, but also to concatenate this two binaries into one binary to be loaded in the memory.
+This Makefile is responsible to not only to compile the ARM Trusted Firmware and the Trusted OS, but also to concatenate this two binaries into one binary to be loaded in the memory of the target device.
+
+When it finishes correctly you should see this on your terminal:
+```
+Success
+```
+And a new file named ```bl31-bl32.bin```. I have uploaded mine [here](link).
+
+# Step 5: Setup the Raspberry Pi 4
+
+
+
+
 
 
 
