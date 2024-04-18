@@ -1,20 +1,20 @@
 # First of all
 This repository is based on the findings of these 3 repositories: https://github.com/peter-nebe/optee_os/tree/master, https://github.com/jefg89/optee-rpi4/tree/main and most notably https://github.com/joaopeixoto13/OPTEE-RPI4.
-The idea of this repo is to work as a standardized step-by-step guide to include OP-TEE support to the Raspberry Pi 4. By pointing out any missing steps, outdated information and merging good ideas present on those repos.
+The idea of this repository is to work as a standardized step-by-step guide to include OP-TEE support to the Raspberry Pi 4 (RPI4). By adding or correcting any missing steps, outdated information and merging good ideas present on those repositories.
 
 # Needed tools
-- Any machine with Linux (that is, outside of the RPI4 itself). The steps in this repository where executed on Ubuntu 22.04 LTS. This machine should also have a micro-SD card reader and a ethernet port. (Or a way to use both, such as a type c docking station).
-- A USB-UART capable connection such a FTDI cable. In this repository a FT232 was used for this purpose.
-- A RJ45 cable. Also known as a ethernet cable.
+- Any machine with Linux (that is, outside of the RPI4 itself). The steps in this repository where executed on Ubuntu 22.04 LTS. This machine should also have a micro-SD card reader and a ethernet port. (Or a way to use both, such as a type-c docking station).
+- A USB-UART capable connection such as a FTDI cable. In this repository a FT232 was used for this purpose.
+- (Optional) A RJ45 cable. Also known as a ethernet cable.
 
 # Step -1: DISCLAIMER
 ***Disclaimer!***
 
-The same applies to the RPi4 as to the RPi3: This port of TF-A and OP-TEE OS is NOT SECURE! It is provided solely for educational purposes and prototyping.
+The same applies to the RPI4 as to the RPI3: This port of TF-A and OP-TEE OS is ***NOT SECURE!*** It is provided solely for educational purposes and prototyping.
 
-# Step 0: Read the [joaopeixoto13](https://github.com/joaopeixoto13/OPTEE-RPI4) repo
+# Step 0: Read the [joaopeixoto13](https://github.com/joaopeixoto13/OPTEE-RPI4) repository
 
-That repo has amazingly detailed explanation of everything we'll be doing on the next steps, it is recomended to read the repo before proceeding. It is not necesarry to follow any of the steps as this repo already does that. 
+That repository has a amazingly detailed explanation of everything we'll be doing on the next steps, it is recomended to read the repository before proceeding, so that you understand the things we are doing and isn't just a mindless copy/paste. It is not necessary to follow any of the steps as this repository already does that. 
 
 # Step 1: Generate the rich operating system 
 
@@ -33,7 +33,7 @@ sudo apt update && sudo apt upgrade
 sudo apt install sed make binutils build-essential diffutils gcc g++ bash patch gzip bzip2 perl tar cpio unzip rsync file bc findutils
 ```
 
-Also we can install git plus some optional packeges such as python and ncurses for the GUI:
+Also, if needed, we can install git. Plus some optional packeges such as python and ncurses for the GUI:
 ```
 sudo apt install git
 sudo apt install libncurses5 libncurses5-dev
@@ -44,17 +44,16 @@ Once every dependency has been installed we can clone the buildroot repo:
 ```
 git clone git://git.buildroot.net/buildroot 
 cd buildroot/
-ls
 ls configs/
 ```
 
-In this step, we should see the configuration files for our board, in this case the raspberrypi4_64_defconfig file.
+In this step, we should see the configuration files for our board, in this case the ```raspberrypi4_64_defconfig``` file.
 
 Now from the buildroot directory, run the following command:
 ```
 make raspberrypi4_64_defconfig
 ```
-We should see ```configuration written to .../OPTEE-RPI4/buildroot/.config```.
+We should see ```configuration written to /.../OPTEE-RPI4/buildroot/.config```.
 
 ## 1.2 Configuring the build
 
@@ -75,7 +74,7 @@ System Configuration ==> Run a getty (login prompt) after boot --> No
 ```
 System Configuration ==> Root password -> <Password>
 ```
-**Note:** Change <Password> with desired string (If using locally, try to avoid any keyboard config issues on the RPI by keeping it simple).
+**Note:** Change \<Password\> with desired string (If using locally, try to avoid any keyboard config issues on the RPI by keeping it simple).
 
 You can go back to the main menu pressing ```ESC``` twice.
 
@@ -89,12 +88,8 @@ Target Packages ==> Networking Applications ==> dropbear --> Yes
 ```
 Target Packages ==> Security ==> optee-client --> Yes
 ```
-- Enable **optee-examples**:
-```
-Target packages ==>  Security ==> optee-examples --> Yes
-```
 
-- In order for the examples to work we must setup the bootloader as well: TEST TEST TEST
+- In order for the examples to appear we must first setup the bootloader:
 ```
 Bootloaders ==> optee_os --> Yes
 
@@ -104,9 +99,14 @@ Bootloaders ==> optee_os ==> OP-TEE OS version --> Custom Git repository
 Bootloaders ==> optee_os ==> URL of custom repository  --> https://github.com/OP-TEE/optee_os.git
 Bootloaders ==> optee_os ==> Custom repository version --> 3.20.0
 Bootloaders ==> optee_os ==> OP-TEE OS needs host-python-cryptography --> Yes
-Bootloaders ==> optee_os ==> Build core --> No
 Bootloaders ==> optee_os ==> Build service TAs and libs  --> No
+Bootloaders ==> optee_os ==> Build core --> No
 Bootloaders ==> optee_os ==> Target platform (mandatory) --> rpi3
+```
+
+- Enable **optee-examples**:
+```
+Target packages ==>  Security ==> optee-examples --> Yes
 ```
 
 - Enable filesystem compression images:
