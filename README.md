@@ -359,6 +359,54 @@ And a new file named ```bl31-bl32.bin```. I have uploaded mine [here](link).
 
 # Step 5: Setup the Raspberry Pi 4
 
+## 5.1 Device tree fix
+
+For some still unknown reason this configuration fails to load OPTEE into the device tree at boot time. This means we need to manually fix it. 
+
+First we need to create a .dts file. Just like [this](link).
+
+```
+touch optee-fix.dts
+```
+After copy this code:
+```
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target-path = "/";
+
+		__overlay__ {
+			firmware {
+				optee-magia {
+					compatible = "linaro,optee-tz";
+					method = "smc";
+				};
+			};
+		};
+	};
+};
+```
+Now we gotta compile it using the RPI4's device tree compiler. Make sure to change the commands to the correct directory.
+```
+cd buildroot/output/build/linux-custom/scripts/
+./dtc .../OPTEE-RPI4/optee-fix.dts > .../OPTEE-RPI4/optee-fix.dtbo
+cd ../../../../../../
+ls
+```
+You should see a new file named ```optee-fix.dtbo```. 
+
+Now we are going to copy this file over to the firmware overlays on the RPI4. So that it can be run once we define it on the config.txt file.
+```
+cp optee-fix.dtbo buildroot/output/images/rpi-firmware/overlays/
+```
+
+
+
+
+
+
 
 
 
