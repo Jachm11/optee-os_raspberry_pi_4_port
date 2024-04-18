@@ -392,7 +392,7 @@ After copy this code:
 ```
 Now we gotta compile it using the RPI4's device tree compiler. Make sure to change the commands to the correct directory.
 ```
-cd buildroot/output/build/linux-custom/scripts/
+cd buildroot/output/build/linux-custom/scripts/dts
 ./dtc .../OPTEE-RPI4/optee-fix.dts > .../OPTEE-RPI4/optee-fix.dtbo
 cd ../../../../../../
 ls
@@ -461,6 +461,13 @@ cp bl31-bl32.bin buildroot/output/images/rpi-firmware/
 ```
 ***Note:***: Notice that this is the same directory with the ```overlays/``` directory we copied the .dtbo fix to.
 
+Now that we have done all this changes we need to re-build the image.
+```
+cd buildroot/
+make -j$(nproc)
+```
+Don't worry! This time should only take some seconds to finish.
+
 And thats it, our RPI4 is ready to be flashed!
 
 # Step 6: Flash and test!
@@ -471,6 +478,7 @@ Remove the SD card and insert it into the computer. Make sure to backup any impo
 
 Once you are sure there nothing valuable, find your SD card using:
 ```
+cd ../
 lsblk
 ```
 In my case my SD card appears as ```/dev/sdb```. Be sure of this information as failing to correctly identify the SD card's name will result on total data loss on the written device.
@@ -479,6 +487,25 @@ From the OPTEE-RPI4 directory execute the following command to wipe the data and
 ```
 sudo dd if=buildroot/output/images/sdcard.img of=/dev/sdb
 ```
+After this you should see a message on the terminal similar to: 
+```
+311297+0 records in
+311297+0 records out
+159384064 bytes (159 MB, 152 MiB) copied, 21,8533 s, 7,3 MB/s
+```
+Now you can unmount and remove the SD card. You can re-insert the SD card to check all files where succesfully flashed. There should be 2 partitions. A ```rootfs``` with the typical linux file structure and a boot one, where we should see, among other things:
+```
+overlays/
+--- optee-fix.dtbo
+bl31-bl32.bin
+cmdline.txt
+config.txt
+```
+
+
+
+
+
 
 
 
