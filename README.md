@@ -13,7 +13,7 @@ That repo has amazingly detailed explanation of everything we'll be doing on the
 
 # Step 1: Generate the rich operating system 
 
-## 1.a Installing buildroot
+## 1.1 Installing buildroot
 Open a console and write:
 ```
 mkdir OPTEE-RPI4
@@ -51,7 +51,7 @@ make raspberrypi4_64_defconfig
 ```
 We should see ```configuration written to .../OPTEE-RPI4/buildroot/.config```.
 
-## 1.b Configuring the build
+## 1.2 Configuring the build
 
 Run the next command to bring the graphical interface for our build:
 ```
@@ -137,7 +137,7 @@ You should see 5 directories ```images/```,```build/```,```host/```,```staging/`
 
 Of all of these ```images/``` is the one we trully care for. It contains the files that will be loaded to our target system the RPI4.
 
-## 1.c Configuring the kernel
+## 1.3 Configuring the kernel
 
 Next, run the next command to configure the kernel:
 
@@ -200,7 +200,7 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	 * 
 	 * Note: In this case, the OP-TEE OS image in no longer than 500k bytes
 	 */
-	const size_t trustedOS_size = 500 * 1024;										// Define the OP-TEE OS image size (500k bytes)
+	const size_t trustedOS_size = 500 * 1024;									// Define the OP-TEE OS image size (500k bytes)
 	const void *const fip_addr = (const void*)0x20000;								// Define the OP-TEE OS image load address (FIP address - 0x20000)
 	void *const trustedOS_addr = (void*)0x10100000;									// Define the OP-TEE OS image address (Secure Payload - 0x10100000)
 	VERBOSE("rpi4: copy trusted_os image (%lu bytes) from %p to %p\n", trustedOS_size, fip_addr, trustedOS_addr);
@@ -208,8 +208,8 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 
 	/* Initialize the OP-TEE OS image info. */
 	bl32_image_ep_info.pc = (uintptr_t)trustedOS_addr;								// Define the bl32 entry point address (0x10100000)
-	bl32_image_ep_info.args.arg2 = rpi4_get_dtb_address();							// Define the Device Tree Blob (DTB) address
-	SET_SECURITY_STATE(bl32_image_ep_info.h.attr, SECURE);							// Define the Secure State
+	bl32_image_ep_info.args.arg2 = rpi4_get_dtb_address();								// Define the Device Tree Blob (DTB) address
+	SET_SECURITY_STATE(bl32_image_ep_info.h.attr, SECURE);								// Define the Secure State
 	VERBOSE("rpi4: trusted_os entry: %p\n", (void*)bl32_image_ep_info.pc);
 	VERBOSE("rpi4: bl32 dtb: %p\n", (void*)bl32_image_ep_info.args.arg2);
 
@@ -357,9 +357,11 @@ Success
 ```
 And a new file named ```bl31-bl32.bin```. I have uploaded mine [here](link).
 
+(This file goes into the RPI4 along side the ```cmd.txt``` and the ```config.txt``` file. We do this later on step 5)
+
 # Step 5: Setup the Raspberry Pi 4
 
-## 5.1 Device tree fix
+## 5.1 Device Tree fix
 
 For some still unknown reason this configuration fails to load OPTEE into the device tree at boot time. This means we need to manually fix it. 
 
@@ -379,7 +381,7 @@ After copy this code:
 
 		__overlay__ {
 			firmware {
-				optee-magia {
+				optee-fix {
 					compatible = "linaro,optee-tz";
 					method = "smc";
 				};
@@ -397,9 +399,85 @@ ls
 ```
 You should see a new file named ```optee-fix.dtbo```. 
 
-Now we are going to copy this file over to the firmware overlays on the RPI4. So that it can be run once we define it on the config.txt file.
+Now we are going to copy this file over to the firmware overlays on the RPI4. So that it can be run once we define it on the `config.txt` file.
 ```
 cp optee-fix.dtbo buildroot/output/images/rpi-firmware/overlays/
+```
+
+## 5.2 Edit config.txt and cmdline.txt
+
+First we are going to create both the config.txt and cmd.txt files. Note that this already exist inside the ```images/``` directory on build root, we can also just directly edit them, but for safekeeping we'll copy them over to the directory.
+
+```
+touch config.txt
+touch cmdline.txt
+```
+Now open ```config.txt``` and copy these contents, so it looks like [this](link):
+
+```
+# Enable UART
+enable_uart=1
+uart_2ndstage=1
+
+# 64-bit
+arm_64bit=1
+
+# Loads at 0x00 and executes it in EL3 in AArch64
+armstub=bl31-bl32.bin
+
+# Define the Kernel image (Normal World)
+kernel=Image
+
+# Implement device tree fix for optee
+dtoverlay=optee-fix
+
+# Define the Kernel Address
+kernel_address=0x200000
+
+# Device Tree Address
+device_tree_address=0x2bd00f00
+
+# Device Tree End (64K bytes)
+device_tree_end=0x2bd10f00
+
+# Initial ram file system (end of the device tree) ==> To mount the root filesystem
+initramfs rootfs.cpio.gz 0x2bd10f00
+```
+
+Now we do the same for cmdline.txt. [Here](link):
+```
+root=/dev/mmcblk0p2 rootwait console=tty1 console=ttyS0,115200
+```
+
+Now we just copy the files to the ```images/``` directory:
+```
+cp config.txt buildroot/output/images/rpi-firmware/
+cp cmdline.txt buildroot/output/images/rpi-firmware/
+```
+
+Here we also copy ```bl31-bl32.bin``` as we just definied it on the ```config.txt``` file:
+```
+cp bl31-bl32.bin buildroot/output/images/rpi-firmware/
+```
+***Note:***: Notice that this is the same directory with the ```overlays/``` directory we copied the .dtbo fix to.
+
+And thats it, our RPI4 is ready to be flashed!
+
+# Step 6: Flash and test!
+
+## 6.1 Flashing the SD card
+
+Remove the SD card and insert it into the computer. Make sure to backup any important data as we are about to permanently delete anything and everything inside the SD card. 
+
+Once you are sure there nothing valuable, find your SD card using:
+```
+lsblk
+```
+In my case my SD card appears as ```/dev/sdb```. Be sure of this information as failing to correctly identify the SD card's name will result on total data loss on the written device.
+
+From the OPTEE-RPI4 directory execute the following command to wipe the data and flash the OS:
+```
+sudo dd if=buildroot/output/images/sdcard.img of=/dev/sdb
 ```
 
 
