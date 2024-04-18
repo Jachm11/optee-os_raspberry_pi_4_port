@@ -106,7 +106,7 @@ Bootloaders ==> optee_os ==> Target platform (mandatory) --> rpi3
 
 - Enable **optee-examples**:
 ```
-Target packages ==>  Security ==> optee-examples --> Yes
+Target packages ==> Security ==> optee-examples --> Yes
 ```
 
 - Enable filesystem compression images:
