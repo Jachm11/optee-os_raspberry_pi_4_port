@@ -501,6 +501,525 @@ bl31-bl32.bin
 cmdline.txt
 config.txt
 ```
+Procced and insert the SD card into the RPI4.
+
+## 6.2 Stablish serial port comunication
+
+For us too see the log messages of OPTEE inside the RPI4 we need to watch the UART serial port, since these messages are not shown on the regular interface on the RPI4.
+For this we can use either PuTTY or picocom. We will be using picocom but it doesnt make much difference to use one or the other.
+
+This section will require the FTDI cable. Follow the instructions on the image bellow to connect it properly:
+
+![ RPI4 pinout](https://dnycf48t040dh.cloudfront.net/fit-in/840x473/GPIO-diagram-Raspberry-Pi-4.png)
+![ Picture with "official" colored wires](https://i.stack.imgur.com/VGTaZ.png)
+
+Once you have plugged the cable to both your PC's usb port and to the pins on the RPI4, run: 
+
+```
+sudo apt install picocom
+
+```
+In order to get to work, we must add the permission to the dialog user, even using with sudo:
+```
+sudo usermod -a -G dialout $USER
+```
+Check if the dialout is on the user group:
+```
+groups $USER
+```
+Add the baudrate and the port where the board is connected on our computer:
+```
+sudo picocom -b 115200 /dev/ttyUSB0
+```
+
+If succesfull you should see: 
+```
+picocom v3.1
+
+port is        : /dev/ttyUSB0
+flowcontrol    : none
+baudrate is    : 115200
+parity is      : none
+databits are   : 8
+stopbits are   : 1
+escape is      : C-a
+local echo is  : no
+noinit is      : no
+noreset is     : no
+hangup is      : no
+nolock is      : no
+send_cmd is    : sz -vv
+receive_cmd is : rz -vv -E
+imap is        : 
+omap is        : 
+emap is        : crcrlf,delbs,
+logfile is     : none
+initstring     : none
+exit_after is  : not set
+exit is        : no
+
+Type [C-a] [C-h] to see available commands
+Terminal ready
+
+```
+## 6.3 Ready the SSH connection for "headless" use (optional)
+
+If you dont have a extra monitor, or just want the flexibilty SSH allows to have, we'll need to configure a SSH conection with the RPI4. (It's worth it!)
+
+First grab your RJ45 and plug it into both the RPI4 and your computer.
+
+In your PC go to (or similar):
+```
+Settings ==> Network ==> Wired (Ethernet Connectiopn) ==> IPv4
+(And disable "automatic (dhcp)" and select "share to other computers")
+```
+Then install isc-dhcp-server and start the service:
+```
+sudo apt install isc-dhcp-server
+sudo systemctl restart isc-dhcp-server.service
+```
+Now go ahead and remove the Ethernet and connect again.
+
+You will also need a SSH service running on your PC. 
+```
+sudo apt-get install openssh-server
+sudo systemctl start ssh
+```
+
+## 6.4 Turn on the RPI4 (Finally!!)
+
+Now go ahead and turn on the RPI4.
+
+If you did step 6.3, upon running the next command you should see the DHCP IP assiged to the RPI4:
+```
+arp -a
+```
+In my case it looks like this:
+```
+? ...
+? (10.42.0.66) at dc:a6:32:37:ec:bd [ether] on enx00e04c681881
+? ...
+```
+This means the IP is ```10.42.0.66```.
+
+Over on your picocom terminal you should see: 
+```
+Initialising SDRAM 'Micron' 16Gb x2 total-size: 32 Gbit 3200
+Loading recovery.elf hnd: 0x00000000
+Failed to read recovery.elf error: 6
+Loading start4.elf hnd: 0x00000341
+Loading fixup4.dat hnd: 0x00000141
+MEM GPU: 76 ARM: 948 TOTAL: 1024
+FIXUP src: 128 256 dst: 948 1024
+Starting start4.elf @ 0xfec00200
+
+NOTICE:  BL31: v2.10.0(debug):v2.10.0-663-g79da34891-dirty
+NOTICE:  BL31: Built : 16:52:44, Apr  1 2024
+INFO:    ARM GICv2 driver initialized
+INFO:    Changed device tree to advertise PSCI.
+INFO:    BL31: Initializing runtime services
+INFO:    BL31: cortex_a72: CPU workaround for erratum 859971 was applied
+WARNING: BL31: cortex_a72: CPU workaround for erratum 1319367 was missing!
+INFO:    BL31: cortex_a72: CPU workaround for CVE 2017_5715 was applied
+INFO:    BL31: cortex_a72: CPU workaround for CVE 2018_3639 was applied
+INFO:    BL31: cortex_a72: CPU workaround for CVE 2022_23960 was applied
+INFO:    BL31: Initializing BL32
+I/TC: 
+I/TC: No non-secure external DT
+I/TC: OP-TEE version: 4.1.0-252-ga471cdecf (gcc version 8.2.1 20180802 (GNU Toolchain for the A-profile Architecture 8.2-2019.01 (arm-rel-8.28))) #2 Wed Apr 17 22:17:06 UTC 2024 aarch64
+I/TC: WARNING: This OP-TEE configuration might be insecure!
+I/TC: WARNING: Please check https://optee.readthedocs.io/en/latest/architecture/porting_guidelines.html
+I/TC: Primary CPU initializing
+I/TC: Primary CPU switching to normal world boot
+INFO:    BL31: Preparing for EL3 exit to normal world
+INFO:    Entry point address = 0x200000
+INFO:    SPSR = 0x3c9
+I/TC: Secondary CPU 1 initializing
+I/TC: Secondary CPU 1 switching to normal world boot
+I/TC: Secondary CPU 2 initializing
+I/TC: Secondary CPU 2 switching to normal world boot
+I/TC: Secondary CPU 3 initializing
+I/TC: Secondary CPU 3 switching to normal world boot
+I/TC: Reserved shared memory is enabled
+I/TC: Dynamic shared memory is disabled
+I/TC: Normal World virtualization support is disabled
+I/TC: Asynchronous notifications are disabled
+[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x410fd083]
+[    0.000000] Linux version 6.1.61-v8 (jachm@Jachm-Linux) (aarch64-buildroot-linux-gnu-gcc.br_real (Buildroot 2024.02-226-g81bb14a935) 12.3.0, GNU ld (GNU Binutils) 2.41) #2 SMP PREEMPT Thu Apr  4 16:15:32 CST 2024
+[    0.000000] random: crng init done
+[    0.000000] Machine model: Raspberry Pi 4 Model B Rev 1.1
+[    0.000000] efi: UEFI not found.
+[    0.000000] Reserved memory: created CMA memory pool at 0x000000002c000000, size 64 MiB
+[    0.000000] OF: reserved mem: initialized node linux,cma, compatible id shared-dma-pool
+[    0.000000] Zone ranges:
+[    0.000000]   DMA      [mem 0x0000000000000000-0x000000003fffffff]
+[    0.000000]   DMA32    [mem 0x0000000040000000-0x00000000fbffffff]
+[    0.000000]   Normal   empty
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000000000000-0x000000000007ffff]
+[    0.000000]   node   0: [mem 0x0000000000080000-0x000000003b3fffff]
+[    0.000000]   node   0: [mem 0x0000000040000000-0x00000000fbffffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000000000000-0x00000000fbffffff]
+[    0.000000] On node 0, zone DMA32: 19456 pages in unavailable ranges
+[    0.000000] On node 0, zone DMA32: 16384 pages in unavailable ranges
+[    0.000000] psci: probing for conduit method from DT.
+[    0.000000] psci: PSCIv1.1 detected in firmware.
+[    0.000000] psci: Using standard PSCI v0.2 function IDs
+[    0.000000] psci: Trusted OS migration not required
+[    0.000000] psci: SMC Calling Convention v1.4
+[    0.000000] percpu: Embedded 29 pages/cpu s79144 r8192 d31448 u118784
+[    0.000000] Detected PIPT I-cache on CPU0
+[    0.000000] CPU features: detected: Spectre-v2
+[    0.000000] CPU features: detected: Spectre-v3a
+[    0.000000] CPU features: detected: Spectre-BHB
+[    0.000000] CPU features: kernel page table isolation forced ON by KASLR
+[    0.000000] CPU features: detected: Kernel page table isolation (KPTI)
+[    0.000000] CPU features: detected: ARM erratum 1742098
+[    0.000000] CPU features: detected: ARM errata 1165522, 1319367, or 1530923
+[    0.000000] alternatives: applying boot alternatives
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 996912
+[    0.000000] Kernel command line: coherent_pool=1M 8250.nr_uarts=1 snd_bcm2835.enable_headphones=0 bcm2708_fb.fbwidth=0 bcm2708_fb.fbheight=0 bcm2708_fb.fbswap=1 smsc95xx.macaddr=DC:A6:32:37:EC:BD vc_mem.mem_base=0x3ec00000 vc_mem.mem_size=0x40000000  root=/dev/mmcblk0p2 rootwait console=tty1 console=ttyS0,115200
+[    0.000000] Dentry cache hash table entries: 524288 (order: 10, 4194304 bytes, linear)
+[    0.000000] Inode-cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+[    0.000000] mem auto-init: stack:all(zero), heap alloc:off, heap free:off
+[    0.000000] software IO TLB: area num 4.
+[    0.000000] software IO TLB: mapped [mem 0x0000000037400000-0x000000003b400000] (64MB)
+[    0.000000] Memory: 3813776K/4050944K available (12544K kernel code, 2174K rwdata, 4080K rodata, 4288K init, 1082K bss, 171632K reserved, 65536K cma-reserved)
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=4, Nodes=1
+[    0.000000] ftrace: allocating 40199 entries in 158 pages
+[    0.000000] ftrace: allocated 158 pages with 5 groups
+[    0.000000] trace event string verifier disabled
+[    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[    0.000000] rcu:     RCU event tracing is enabled.
+[    0.000000] rcu:     RCU restricting CPUs from NR_CPUS=256 to nr_cpu_ids=4.
+[    0.000000]  Trampoline variant of Tasks RCU enabled.
+[    0.000000]  Rude variant of Tasks RCU enabled.
+[    0.000000]  Tracing variant of Tasks RCU enabled.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=4
+[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000] Root IRQ handler: gic_handle_irq
+[    0.000000] GIC: Using split EOI/Deactivate mode
+[    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.000000] arch_timer: cp15 timer(s) running at 54.00MHz (phys).
+[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0xc743ce346, max_idle_ns: 440795203123 ns
+[    0.000000] sched_clock: 56 bits at 54MHz, resolution 18ns, wraps every 4398046511102ns
+[    0.000303] Console: colour dummy device 80x25
+[    0.000942] printk: console [tty1] enabled
+[    0.001011] Calibrating delay loop (skipped), value calculated using timer frequency.. 108.00 BogoMIPS (lpj=216000)
+[    0.001053] pid_max: default: 32768 minimum: 301
+[    0.001188] LSM: Security Framework initializing
+[    0.001395] Mount-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.001463] Mountpoint-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.002755] cgroup: Disabling memory control group subsystem
+[    0.004764] cblist_init_generic: Setting adjustable number of callback queues.
+[    0.004799] cblist_init_generic: Setting shift to 2 and lim to 1.
+[    0.004977] cblist_init_generic: Setting adjustable number of callback queues.
+[    0.005007] cblist_init_generic: Setting shift to 2 and lim to 1.
+[    0.005178] cblist_init_generic: Setting adjustable number of callback queues.
+[    0.005207] cblist_init_generic: Setting shift to 2 and lim to 1.
+[    0.005640] rcu: Hierarchical SRCU implementation.
+[    0.005666] rcu:     Max phase no-delay instances is 1000.
+[    0.007754] EFI services will not be available.
+[    0.008275] smp: Bringing up secondary CPUs ...
+[    0.017234] Detected PIPT I-cache on CPU1
+[    0.017377] CPU1: Booted secondary processor 0x0000000001 [0x410fd083]
+[    0.026383] Detected PIPT I-cache on CPU2
+[    0.026502] CPU2: Booted secondary processor 0x0000000002 [0x410fd083]
+[    0.035504] Detected PIPT I-cache on CPU3
+[    0.035625] CPU3: Booted secondary processor 0x0000000003 [0x410fd083]
+[    0.035766] smp: Brought up 1 node, 4 CPUs
+[    0.035856] SMP: Total of 4 processors activated.
+[    0.035878] CPU features: detected: 32-bit EL0 Support
+[    0.035897] CPU features: detected: 32-bit EL1 Support
+[    0.035919] CPU features: detected: CRC32 instructions
+[    0.036082] CPU: All CPU(s) started at EL2
+[    0.036118] alternatives: applying system-wide alternatives
+[    0.037839] devtmpfs: initialized
+[    0.047637] Enabled cp15_barrier support
+[    0.047701] Enabled setend support
+[    0.047897] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[    0.047948] futex hash table entries: 1024 (order: 4, 65536 bytes, linear)
+[    0.049509] pinctrl core: initialized pinctrl subsystem
+[    0.050262] DMI not present or invalid.
+[    0.050859] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.053951] DMA: preallocated 1024 KiB GFP_KERNEL pool for atomic allocations
+[    0.054257] DMA: preallocated 1024 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.055154] DMA: preallocated 1024 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+[    0.055258] audit: initializing netlink subsys (disabled)
+[    0.055522] audit: type=2000 audit(0.052:1): state=initialized audit_enabled=0 res=1
+[    0.056112] thermal_sys: Registered thermal governor 'step_wise'
+[    0.056194] cpuidle: using governor menu
+[    0.056421] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.056621] ASID allocator initialised with 32768 entries
+[    0.057547] Serial: AMBA PL011 UART driver
+[    0.068396] bcm2835-mbox fe00b880.mailbox: mailbox enabled
+[    0.084213] raspberrypi-firmware soc:firmware: Attached to firmware from 2023-10-17T15:39:16, variant start
+[    0.088228] raspberrypi-firmware soc:firmware: Firmware hash is 30f0c5e4d076da3ab4f341d88e7d505760b93ad7
+[    0.101946] KASLR enabled
+[    0.131987] bcm2835-dma fe007000.dma: DMA legacy API manager, dmachans=0x1
+[    0.136743] iommu: Default domain type: Translated 
+[    0.136776] iommu: DMA domain TLB invalidation policy: strict mode 
+[    0.137176] SCSI subsystem initialized
+[    0.137408] usbcore: registered new interface driver usbfs
+[    0.137471] usbcore: registered new interface driver hub
+[    0.137544] usbcore: registered new device driver usb
+[    0.137904] usb_phy_generic phy: supply vcc not found, using dummy regulator
+[    0.138387] pps_core: LinuxPPS API ver. 1 registered
+[    0.138414] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.138453] PTP clock support registered
+[    0.139460] vgaarb: loaded
+[    0.139975] clocksource: Switched to clocksource arch_sys_counter
+[    0.140589] VFS: Disk quotas dquot_6.6.0
+[    0.140678] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.140857] FS-Cache: Loaded
+[    0.141028] CacheFiles: Loaded
+[    0.149490] NET: Registered PF_INET protocol family
+[    0.150144] IP idents hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[    0.155030] tcp_listen_portaddr_hash hash table entries: 2048 (order: 3, 32768 bytes, linear)
+[    0.155122] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.155164] TCP established hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.155537] TCP bind hash table entries: 32768 (order: 8, 1048576 bytes, linear)
+[    0.156860] TCP: Hash tables configured (established 32768 bind 32768)
+[    0.157273] MPTCP token hash table entries: 4096 (order: 4, 98304 bytes, linear)
+[    0.157471] UDP hash table entries: 2048 (order: 4, 65536 bytes, linear)
+[    0.157631] UDP-Lite hash table entries: 2048 (order: 4, 65536 bytes, linear)
+[    0.157978] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    0.158726] RPC: Registered named UNIX socket transport module.
+[    0.158757] RPC: Registered udp transport module.
+[    0.158777] RPC: Registered tcp transport module.
+[    0.158795] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    0.158828] PCI: CLS 0 bytes, default 64
+[    0.161075] hw perfevents: enabled with armv8_cortex_a72 PMU driver, 7 counters available
+[    0.161439] kvm [1]: IPA Size Limit: 44 bits
+[    0.162705] kvm [1]: vgic interrupt IRQ9
+[    0.162929] kvm [1]: Hyp mode initialized successfully
+[    1.181259] Initialise system trusted keyrings
+[    1.181711] workingset: timestamp_bits=46 max_order=20 bucket_order=0
+[    1.187998] zbud: loaded
+[    1.190573] NFS: Registering the id_resolver key type
+[    1.190622] Key type id_resolver registered
+[    1.190644] Key type id_legacy registered
+[    1.190752] nfs4filelayout_init: NFSv4 File Layout Driver Registering...
+[    1.190781] nfs4flexfilelayout_init: NFSv4 Flexfile Layout Driver Registering...
+[    1.192048] Key type asymmetric registered
+[    1.192081] Asymmetric key parser 'x509' registered
+[    1.192167] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 246)
+[    1.192433] io scheduler mq-deadline registered
+[    1.192463] io scheduler kyber registered
+[    1.203145] brcm-pcie fd500000.pcie: host bridge /scb/pcie@7d500000 ranges:
+[    1.203202] brcm-pcie fd500000.pcie:   No bus range found for /scb/pcie@7d500000, using [bus 00-ff]
+[    1.203296] brcm-pcie fd500000.pcie:      MEM 0x0600000000..0x063fffffff -> 0x00c0000000
+[    1.203392] brcm-pcie fd500000.pcie:   IB MEM 0x0000000000..0x00bfffffff -> 0x0400000000
+[    1.203984] brcm-pcie fd500000.pcie: setting SCB_ACCESS_EN, READ_UR_MODE, MAX_BURST_SIZE
+[    1.204437] brcm-pcie fd500000.pcie: PCI host bridge to bus 0000:00
+[    1.204470] pci_bus 0000:00: root bus resource [bus 00-ff]
+[    1.204499] pci_bus 0000:00: root bus resource [mem 0x600000000-0x63fffffff] (bus address [0xc0000000-0xffffffff])
+[    1.204582] pci 0000:00:00.0: [14e4:2711] type 01 class 0x060400
+[    1.204824] pci 0000:00:00.0: PME# supported from D0 D3hot
+[    1.208648] pci 0000:00:00.0: bridge configuration invalid ([bus 00-00]), reconfiguring
+[    1.208909] pci_bus 0000:01: supply vpcie3v3 not found, using dummy regulator
+[    1.209083] pci_bus 0000:01: supply vpcie3v3aux not found, using dummy regulator
+[    1.209185] pci_bus 0000:01: supply vpcie12v not found, using dummy regulator
+[    1.318090] brcm-pcie fd500000.pcie: link up, 5.0 GT/s PCIe x1 (SSC)
+[    1.318192] pci 0000:01:00.0: [1106:3483] type 00 class 0x0c0330
+[    1.318272] pci 0000:01:00.0: reg 0x10: [mem 0x00000000-0x00000fff 64bit]
+[    1.318538] pci 0000:01:00.0: PME# supported from D0 D3cold
+[    1.319010] pci_bus 0000:01: busn_res: [bus 01-ff] end is updated to 01
+[    1.319068] pci 0000:00:00.0: BAR 8: assigned [mem 0x600000000-0x6000fffff]
+[    1.319103] pci 0000:01:00.0: BAR 0: assigned [mem 0x600000000-0x600000fff 64bit]
+[    1.319159] pci 0000:00:00.0: PCI bridge to [bus 01]
+[    1.319191] pci 0000:00:00.0:   bridge window [mem 0x600000000-0x6000fffff]
+[    1.319597] pcieport 0000:00:00.0: enabling device (0000 -> 0002)
+[    1.319820] pcieport 0000:00:00.0: PME: Signaling with IRQ 30
+[    1.320303] pcieport 0000:00:00.0: AER: enabled with IRQ 30
+[    1.321675] bcm2708_fb soc:fb: Unable to determine number of FBs. Disabling driver.
+[    1.321711] bcm2708_fb: probe of soc:fb failed with error -2
+[    1.329225] Serial: 8250/16550 driver, 1 ports, IRQ sharing enabled
+[    1.332310] iproc-rng200 fe104000.rng: hwrng registered
+[    1.332809] vc-mem: phys_addr:0x00000000 mem_base=0x3ec00000 mem_size:0x40000000(1024 MiB)
+[    1.344823] brd: module loaded
+[    1.352043] loop: module loaded
+[    1.352789] Loading iSCSI transport class v2.0-870.
+[    1.357894] bcmgenet fd580000.ethernet: GENET 5.0 EPHY: 0x0000
+[    1.452120] unimac-mdio unimac-mdio.-19: Broadcom UniMAC MDIO bus
+[    1.453130] usbcore: registered new interface driver r8152
+[    1.453223] usbcore: registered new interface driver lan78xx
+[    1.453295] usbcore: registered new interface driver smsc95xx
+[    1.454751] xhci_hcd 0000:01:00.0: enabling device (0000 -> 0002)
+[    1.454860] xhci_hcd 0000:01:00.0: xHCI Host Controller
+[    1.454903] xhci_hcd 0000:01:00.0: new USB bus registered, assigned bus number 1
+[    1.455498] xhci_hcd 0000:01:00.0: hcc params 0x002841eb hci version 0x100 quirks 0x0f00040000000890
+[    1.456097] xhci_hcd 0000:01:00.0: xHCI Host Controller
+[    1.456134] xhci_hcd 0000:01:00.0: new USB bus registered, assigned bus number 2
+[    1.456171] xhci_hcd 0000:01:00.0: Host supports USB 3.0 SuperSpeed
+[    1.456525] usb usb1: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 6.01
+[    1.456562] usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    1.456590] usb usb1: Product: xHCI Host Controller
+[    1.456614] usb usb1: Manufacturer: Linux 6.1.61-v8 xhci-hcd
+[    1.456637] usb usb1: SerialNumber: 0000:01:00.0
+[    1.457295] hub 1-0:1.0: USB hub found
+[    1.457377] hub 1-0:1.0: 1 port detected
+[    1.458261] usb usb2: New USB device found, idVendor=1d6b, idProduct=0003, bcdDevice= 6.01
+[    1.458299] usb usb2: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    1.458327] usb usb2: Product: xHCI Host Controller
+[    1.458350] usb usb2: Manufacturer: Linux 6.1.61-v8 xhci-hcd
+[    1.458374] usb usb2: SerialNumber: 0000:01:00.0
+[    1.458989] hub 2-0:1.0: USB hub found
+[    1.459069] hub 2-0:1.0: 4 ports detected
+[    1.460599] dwc_otg: version 3.00a 10-AUG-2012 (platform bus)
+[    1.461995] usbcore: registered new interface driver uas
+[    1.462104] usbcore: registered new interface driver usb-storage
+[    1.462825] mousedev: PS/2 mouse device common for all mice
+[    1.468453] sdhci: Secure Digital Host Controller Interface driver
+[    1.468488] sdhci: Copyright(c) Pierre Ossman
+[    1.469020] sdhci-pltfm: SDHCI platform and OF driver helper
+[    1.473789] ledtrig-cpu: registered to indicate activity on CPUs
+[    1.474080] SMCCC: SOC_ID: ARCH_SOC_ID not implemented, skipping ....
+[    1.474156] hid: raw HID events driver (C) Jiri Kosina
+[    1.474386] usbcore: registered new interface driver usbhid
+[    1.474413] usbhid: USB HID core driver
+[    1.482875] optee: probing for conduit method.
+[    1.482947] optee: revision 4.1 (a471cdec)
+[    1.499799] optee: initialized driver
+[    1.500427] NET: Registered PF_PACKET protocol family
+[    1.500542] Key type dns_resolver registered
+[    1.501484] registered taskstats version 1
+[    1.501572] Loading compiled-in X.509 certificates
+[    1.502376] Key type .fscrypt registered
+[    1.502404] Key type fscrypt-provisioning registered
+[    1.515323] uart-pl011 fe201000.serial: there is not valid maps for state default
+[    1.516316] uart-pl011 fe201000.serial: cts_event_workaround enabled
+[    1.516476] fe201000.serial: ttyAMA1 at MMIO 0xfe201000 (irq = 35, base_baud = 0) is a PL011 rev2
+[    1.516730] serial serial0: tty port ttyAMA1 registered
+[    1.524787] bcm2835-aux-uart fe215040.serial: there is not valid maps for state default
+[    1.525622] printk: console [ttyS0] disabled
+[    1.525744] fe215040.serial: ttyS0 at MMIO 0xfe215040 (irq = 36, base_baud = 62500000) is a 16550
+[    1.716008] usb 1-1: new high-speed USB device number 2 using xhci_hcd
+[    1.719855] printk: console [ttyS0] enabled
+[    1.953115] usb 1-1: New USB device found, idVendor=2109, idProduct=3431, bcdDevice= 4.20
+[    1.970054] bcm2835-wdt bcm2835-wdt: Poweroff handler already present!
+[    1.974601] usb 1-1: New USB device strings: Mfr=0, Product=1, SerialNumber=0
+[    1.981746] bcm2835-wdt bcm2835-wdt: Broadcom BCM2835 watchdog timer
+[    1.987898] usb 1-1: Product: USB2.0 Hub
+[    1.995640] bcm2835-power bcm2835-power: Broadcom BCM2835 power domains driver
+[    2.002973] hub 1-1:1.0: USB hub found
+[    2.010213] mmc-bcm2835 fe300000.mmcnr: mmc_debug:0 mmc_debug2:0
+[    2.015520] hub 1-1:1.0: 4 ports detected
+[    2.019867] mmc-bcm2835 fe300000.mmcnr: DMA channel allocated
+[    2.048143] of_cfs_init
+[    2.085206] mmc0: SDHCI controller on fe340000.mmc [fe340000.mmc] using ADMA
+[    2.086111] of_cfs_init: OK
+[    2.142418] mmc1: new high speed SDIO card at address 0001
+[    2.344000] usb 1-1.3: new full-speed USB device number 3 using xhci_hcd
+[    2.391610] mmc0: new ultra high speed DDR50 SDHC card at address 0001
+[    2.501194] usb 1-1.3: New USB device found, idVendor=25a7, idProduct=fa67, bcdDevice= 7.10
+[    2.502357] mmcblk0: mmc0:0001 EB1QT 29.8 GiB 
+[    2.508983] usb 1-1.3: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+[    2.508999] usb 1-1.3: Product: 2.4G Receiver
+[    2.516266]  mmcblk0: p1 p2
+[    2.517673] usb 1-1.3: Manufacturer: CX
+[    2.525207] mmcblk0: mmc0:0001 EB1QT 29.8 GiB
+[    2.542845] input: CX 2.4G Receiver as /devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb1/1-1/1-1.3/1-1.3:1.0/0003:25A7:FA67.0001/input/input0
+[    3.268615] hid-generic 0003:25A7:FA67.0001: input,hidraw0: USB HID v1.10 Keyboard [CX 2.4G Receiver] on usb-0000:01:00.0-1.3/input0
+[    3.288793] input: CX 2.4G Receiver Mouse as /devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb1/1-1/1-1.3/1-1.3:1.1/0003:25A7:FA67.0002/input/input1
+[    3.305117] input: CX 2.4G Receiver as /devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb1/1-1/1-1.3/1-1.3:1.1/0003:25A7:FA67.0002/input/input2
+[    3.320838] input: CX 2.4G Receiver Consumer Control as /devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb1/1-1/1-1.3/1-1.3:1.1/0003:25A7:FA67.0002/input/input3
+[    3.396254] input: CX 2.4G Receiver System Control as /devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb1/1-1/1-1.3/1-1.3:1.1/0003:25A7:FA67.0002/input/input4
+[    3.413469] hid-generic 0003:25A7:FA67.0002: input,hiddev96,hidraw1: USB HID v1.10 Mouse [CX 2.4G Receiver] on usb-0000:01:00.0-1.3/input1
+[    3.430210] EXT4-fs (mmcblk0p2): INFO: recovery required on readonly filesystem
+[    3.437739] EXT4-fs (mmcblk0p2): write access will be enabled during recovery
+[    3.508325] EXT4-fs (mmcblk0p2): orphan cleanup on readonly fs
+[    3.514381] EXT4-fs (mmcblk0p2): recovery complete
+[    3.521290] EXT4-fs (mmcblk0p2): mounted filesystem with ordered data mode. Quota mode: none.
+[    3.530067] VFS: Mounted root (ext4 filesystem) readonly on device 179:2.
+[    3.537549] devtmpfs: mounted
+[    3.546406] Freeing unused kernel memory: 4288K
+[    3.551241] Run /sbin/init as init process
+[    3.651840] EXT4-fs (mmcblk0p2): re-mounted. Quota mode: none.
+Seeding 256 bits and crediting
+Saving 256 bits of creditable seed for next boot
+Starting syslogd: OK
+Starting klogd: OK
+Running sysctl: OK
+Starting tee-supplicant: Using device /dev/teepriv0.
+OK
+Starting network: [    3.884448] bcmgenet fd580000.ethernet: configuring instance for external RGMII (RX delay)
+[    3.894068] bcmgenet fd580000.ethernet eth0: Link is Down
+udhcpc: started, v1.36.1
+udhcpc: broadcasting discover
+udhcpc: no lease, forking to background
+OK
+Starting dhcpcd...
+[    7.216872] NET: Registered PF_INET6 protocol family
+[    7.223738] Segment Routing with IPv6
+[    7.227579] In-situ OAM (IOAM) with IPv6
+dhcpcd-10.0.5 starting
+DUID 00:01:00:01:c7:92:bc:87:dc:a6:32:37:ec:bd
+[    7.270337] 8021q: 802.1Q VLAN Support v1.8
+[    7.431728] cfg80211: Loading compiled-in X.509 certificates for regulatory database
+[    7.450574] cfg80211: Loaded X.509 cert 'benh@debian.org: 577e021cb980e0e820821ba7b54b4961b8b4fadf'
+[    7.460818] cfg80211: Loaded X.509 cert 'romain.perier@gmail.com: 3abbc6ec146e09d1b6016ab9d6cf71dd233f0328'
+[    7.471706] cfg80211: Loaded X.509 cert 'sforshee: 00b28ddf47aef9cea7'
+[    7.478507] platform regulatory.0: Direct firmware load for regulatory.db failed with error -2
+[    7.487567] cfg80211: failed to load regulatory.db
+no interfaces have a carrier
+Starting dropbear sshd: OK
+[    7.972293] IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+[    7.979527] bcmgenet fd580000.ethernet eth0: Link is Up - 1Gbps/Full - flow control rx/tx
+```
+
+The most important lines to look for are: 
+```
+NOTICE:  BL31: v2.10.0(debug):v2.10.0-663-g79da34891-dirty
+NOTICE:  BL31: Built : 16:52:44, Apr  1 2024
+INFO:    ARM GICv2 driver initialized
+INFO:    Changed device tree to advertise PSCI.
+INFO:    BL31: Initializing runtime services
+INFO:    BL31: cortex_a72: CPU workaround for erratum 859971 was applied
+WARNING: BL31: cortex_a72: CPU workaround for erratum 1319367 was missing!
+INFO:    BL31: cortex_a72: CPU workaround for CVE 2017_5715 was applied
+INFO:    BL31: cortex_a72: CPU workaround for CVE 2018_3639 was applied
+INFO:    BL31: cortex_a72: CPU workaround for CVE 2022_23960 was applied
+INFO:    BL31: Initializing BL32
+I/TC: 
+I/TC: No non-secure external DT
+I/TC: OP-TEE version: 4.1.0-252-ga471cdecf (gcc version 8.2.1 20180802 (GNU Toolchain for the A-profile Architecture 8.2-2019.01 (arm-rel-8.28))) #2 Wed Apr 17 22:17:06 UTC 2024 aarch64
+I/TC: WARNING: This OP-TEE configuration might be insecure!
+I/TC: WARNING: Please check https://optee.readthedocs.io/en/latest/architecture/porting_guidelines.html
+I/TC: Primary CPU initializing
+I/TC: Primary CPU switching to normal world boot
+INFO:    BL31: Preparing for EL3 exit to normal world
+INFO:    Entry point address = 0x200000
+INFO:    SPSR = 0x3c9
+I/TC: Secondary CPU 1 initializing
+```
+
+```
+Running sysctl: OK
+Starting tee-supplicant: Using device /dev/teepriv0.
+OK
+```
+If by any reason this shows:
+```
+Starting tee-supplicant: Using device /dev/teepriv0.
+ERR [141] TSUP:main:870: make_daemon(): -1
+```
+This (most likely) means the device tree is not being correctly loaded, either ```optee-fix.dtbo``` or a error at ```config.txt```. Other possible culprit is the absence of the optee driver altogether.
+
+Look also for: 
+```
+Starting dropbear sshd: OK
+[    7.972293] IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+[    7.979527] bcmgenet fd580000.ethernet eth0: Link is Up - 1Gbps/Full - flow control rx/tx
+```
+This means the dropbear ssh service is up and running:
+
+If all these lines seem to be there then congrats, we are up and running. Lets test it!
+
+## 6.3 Connect via SSH (optional)
+
 
 
 
