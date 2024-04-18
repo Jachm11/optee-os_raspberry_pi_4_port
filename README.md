@@ -7,6 +7,10 @@ The idea of this repo is to work as a standardized step-by-step guide to include
 - A USB-UART capable connection such a FTDI cable. In this repository a FT232 was used for this purpose.
 - A RJ45 cable. Also known as a ethernet cable.
 
+# Step -1: DISCLAIMER
+***Disclaimer!***
+The same applies to the RPi4 as to the RPi3: This port of TF-A and OP-TEE OS is NOT SECURE! It is provided solely for educational purposes and prototyping.
+
 # Step 0: Read the [joaopeixoto13](https://github.com/joaopeixoto13/OPTEE-RPI4) repo
 
 That repo has amazingly detailed explanation of everything we'll be doing on the next steps, it is recomended to read the repo before proceeding. It is not necesarry to follow any of the steps as this repo already does that. 
@@ -573,6 +577,8 @@ In your PC go to (or similar):
 Settings ==> Network ==> Wired (Ethernet Connectiopn) ==> IPv4
 (And disable "automatic (dhcp)" and select "share to other computers")
 ```
+Open a new terminal, ```ctrl+alt+t```.
+
 Then install isc-dhcp-server and start the service:
 ```
 sudo apt install isc-dhcp-server
@@ -589,18 +595,6 @@ sudo systemctl start ssh
 ## 6.4 Turn on the RPI4 (Finally!!)
 
 Now go ahead and turn on the RPI4.
-
-If you did step 6.3, upon running the next command you should see the DHCP IP assiged to the RPI4:
-```
-arp -a
-```
-In my case it looks like this:
-```
-? ...
-? (10.42.0.66) at dc:a6:32:37:ec:bd [ether] on enx00e04c681881
-? ...
-```
-This means the IP is ```10.42.0.66```.
 
 Over on your picocom terminal you should see: 
 ```
@@ -1014,11 +1008,102 @@ Starting dropbear sshd: OK
 [    7.972293] IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
 [    7.979527] bcmgenet fd580000.ethernet eth0: Link is Up - 1Gbps/Full - flow control rx/tx
 ```
-This means the dropbear ssh service is up and running:
+This means the dropbear SSH service is up and running:
 
 If all these lines seem to be there then congrats, we are up and running. Lets test it!
 
-## 6.3 Connect via SSH (optional)
+## 6.5 Connect via SSH (optional)
+
+Open a new terminal ```ctrl+alt+t``` (or the one you used to install open ssh).
+If you did step 6.3, upon running the next command you should see the DHCP IP assiged to the RPI4:
+```
+arp -a
+```
+In my case it looks like this:
+```
+? ...
+? ...
+? (10.42.0.66) at dc:a6:32:37:ec:bd [ether] on enx00e04c681881
+? ...
+? ...
+```
+This means the IP is ```10.42.0.66```.
+```
+ssh root@10.42.0.66
+```
+
+Then run:
+```
+The authenticity of host '10.42.0.66 (10.42.0.66)' can't be established.
+ED25519 key fingerprint is SHA256:Zt9noffr7lDxHmoxv8jt5FOxWsgYrWwSx+eHsYBqTZU.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? 
+
+```
+Type ```yes``` and enter.
+
+You will be promted to enter the password for root:
+```
+Warning: Permanently added '10.42.0.66' (ED25519) to the list of known hosts.
+root@10.42.0.66's password:
+```
+Type the password you set up back on step 1.2 and enter.
+
+You should see:
+```
+#
+```
+This means you have succesfully logged in!
+
+## 6.6 Test op-tee
+
+---
+ IGNORE IF USING SSH
+
+If you are not using SSH, upon conecting both a monitor and keyboard to the RPI4 youll be promted to login like this: 
+```
+Welcome to Buildroot
+buildroot login:
+```
+Just type ```root``` as user. And then the password you defined over on step 1.2.
+
+IGNORE IF USING SSH
+---
+
+Now lets test optee, over on the rpi4 or SSH conection type:
+
+```
+#
+# optee_example_hello_world
+```
+On the RPI4 you should see:
+```
+#
+# optee_example_hello_world
+Invoking TA to increment 42
+TA incremented value to 43
+# 
+
+```
+And on the picocom terminal:
+```
+D/TA:  TA_CreateEntryPoint:39 has been called
+D/TA:  TA_OpenSessionEntryPoint:68 has been called
+I/TA: Hello World!
+D/TA:  inc_value:105 has been called
+I/TA: Got value: 42 from NW
+I/TA: Increase value to: 43
+I/TA: Goodbye!
+D/TA:  TA_DestroyEntryPoint:50 has been called
+```
+Thats our hello world! (Easy,right?)
+
+Enjoy your RPI4 with OP-TEE. 
+
+Once again:
+***Disclaimer!***
+The same applies to the RPi4 as to the RPi3: This port of TF-A and OP-TEE OS is NOT SECURE! It is provided solely for educational purposes and prototyping.
+
 
 
 
