@@ -9,6 +9,7 @@ The idea of this repo is to work as a standardized step-by-step guide to include
 
 # Step -1: DISCLAIMER
 ***Disclaimer!***
+
 The same applies to the RPi4 as to the RPi3: This port of TF-A and OP-TEE OS is NOT SECURE! It is provided solely for educational purposes and prototyping.
 
 # Step 0: Read the [joaopeixoto13](https://github.com/joaopeixoto13/OPTEE-RPI4) repo
@@ -1058,7 +1059,8 @@ This means you have succesfully logged in!
 ## 6.6 Test op-tee
 
 ---
- IGNORE IF USING SSH
+
+IGNORE IF USING SSH
 
 If you are not using SSH, upon conecting both a monitor and keyboard to the RPI4 youll be promted to login like this: 
 ```
@@ -1068,6 +1070,7 @@ buildroot login:
 Just type ```root``` as user. And then the password you defined over on step 1.2.
 
 IGNORE IF USING SSH
+
 ---
 
 Now lets test optee, over on the rpi4 or SSH conection type:
@@ -1102,6 +1105,7 @@ Enjoy your RPI4 with OP-TEE.
 
 Once again:
 ***Disclaimer!***
+
 The same applies to the RPi4 as to the RPi3: This port of TF-A and OP-TEE OS is NOT SECURE! It is provided solely for educational purposes and prototyping.
 
 
