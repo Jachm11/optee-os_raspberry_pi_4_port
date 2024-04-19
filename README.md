@@ -138,25 +138,27 @@ Run the following command:
 ```
 ls output/
 ```
-You should see 5 directories ```images/```,```build/```,```host/```,```staging/```,```target/```. All explained on [joaopeixoto13](https://github.com/joaopeixoto13/OPTEE-RPI4) repo.
+You should see 5 directories ```build/```, ```host/```, ```images/```, ```staging/``` and ```target/```. Each explained on [joaopeixoto13](https://github.com/joaopeixoto13/OPTEE-RPI4) repository.
 
-Of all of these ```images/``` is the one we trully care for. It contains the files that will be loaded to our target system the RPI4.
+Of all of these direcotories ```images/``` is the one we trully care for. As it contains the files that will be loaded to our target system the RPI4.
 
 ## 1.3 Configuring the kernel
 
-Next, run the next command to configure the kernel:
+Next, run the following command to configure the kernel:
 
 ```
 make linux-menuconfig
 ```
+This should bring a similar UI as before.
 
 - Enable **Trusted Execution Enviroment support**:
 ```
 Device Drivers ==> Trusted Execution Environment support --> Yes
 ```
+Then save and exit.
 
 # Step 2: Update the ARM Trusted Firmware
-In order for optee to correctly run on the RPI4 support for tge BL32 must be addded. 
+In order for optee to correctly run on the RPI4, support for tge BL32 must be addded. 
 To avoid version conflicts a specific commit of the ARM Trusted Firmware is suggested here (most recent commit as of ```April 2024```):
 
 Move to the OPTEE-RPI4 directory and clone the repo:
@@ -168,9 +170,11 @@ cd arm-trusted-firmware/
 git reset --hard 0cf4fda
 
 cd plat/rpi/common
+ls
 ```
+You should see several files, one of which should be ```rpi4_bl31_setup.c```. 
 
-Next open the ```rpi4_bl31_setup.c``` and navigate to the bl31_early_platform_setup2 function:
+Go ahead and open ```rpi4_bl31_setup.c``` and navigate to the ```bl31_early_platform_setup2``` function:
 
 Replace the function with the following code (or copy the whole file on this repo [here](link)): 
 ```
@@ -226,13 +230,15 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	bl33_image_ep_info.spsr = rpi3_get_spsr_for_bl33_entry();
 	SET_SECURITY_STATE(bl33_image_ep_info.h.attr, NON_SECURE);
 	VERBOSE("rpi4: kernel entry: %p\n", (void*)bl33_image_ep_info.pc);
+}
 
 ```
+Save and close the file.
 
-# Step 3: Update the ARM Trusted Firmware
+# Step 3: Update OPTEE-OS
 
-First, we need to download the existing OPTEE Trusted OS from the official OPTEE Github website:
-Same as before a specific commit is suggested: 
+First, we need to download the existing OPTEE Trusted OS from the official OPTEE Github website.
+Same as before, a specific commit is suggested: 
 
 Move to the OPTEE-RPI4 directory and clone the repo:
 ```
@@ -245,7 +251,7 @@ git reset --hard 6376023
 
 Next, execute the following command to create a new platform for the Raspberry Pi 4 based on the previsous version:
 ```
-cd optee_os/core/arch/arm
+cd core/arch/arm
 cp -rf plat-rpi3 plat-rpi4
 
 cd plat-rpi4
@@ -253,11 +259,12 @@ ls
 ```
 Now, you should see four files ```conf.mk```,```main.c```,```platform_config.h``` and ```sub.mk```.
 
-Open the ```platform_config.h``` file (also [here](link)). Two things must be changed in the file. These things are:
+Open the ```platform_config.h``` file (also [here](link)). Two things must be changed in the file: the UART base address and the UART Clock Frequency, like so:
 
 ```
-The UART base address: 0xfe215040
-The UART Clock Frequency: 48000000
+#define CONSOLE_UART_BASE	0xfe215040 /* UART0 */
+#define CONSOLE_BAUDRATE	115200
+#define CONSOLE_UART_CLK_IN_HZ	48000000
 ```
 
 # Step 4: Compile the ARM Trusted Firmware and the Trusted OS
