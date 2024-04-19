@@ -230,11 +230,39 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	/* NEW CODE FOR OPTEE SUPPORT ENDS HERE */
 	/* ------------------------------------------------------ */
 
-	/* Initialize the Linux kernel image info. */
+		/* Initialize the Linux kernel image info. */
 	bl33_image_ep_info.pc = plat_get_ns_image_entrypoint();
 	bl33_image_ep_info.spsr = rpi3_get_spsr_for_bl33_entry();
 	SET_SECURITY_STATE(bl33_image_ep_info.h.attr, NON_SECURE);
 	VERBOSE("rpi4: kernel entry: %p\n", (void*)bl33_image_ep_info.pc);
+
+#if RPI3_DIRECT_LINUX_BOOT
+# if RPI3_BL33_IN_AARCH32
+	/*
+	 * According to the file ``Documentation/arm/Booting`` of the Linux
+	 * kernel tree, Linux expects:
+	 * r0 = 0
+	 * r1 = machine type number, optional in DT-only platforms (~0 if so)
+	 * r2 = Physical address of the device tree blob
+	 */
+	VERBOSE("rpi4: Preparing to boot 32-bit Linux kernel\n");
+	bl33_image_ep_info.args.arg0 = 0U;
+	bl33_image_ep_info.args.arg1 = ~0U;
+	bl33_image_ep_info.args.arg2 = rpi4_get_dtb_address();
+# else
+	/*
+	 * According to the file ``Documentation/arm64/booting.txt`` of the
+	 * Linux kernel tree, Linux expects the physical address of the device
+	 * tree blob (DTB) in x0, while x1-x3 are reserved for future use and
+	 * must be 0.
+	 */
+	VERBOSE("rpi4: Preparing to boot 64-bit Linux kernel\n");
+	bl33_image_ep_info.args.arg0 = rpi4_get_dtb_address();
+	bl33_image_ep_info.args.arg1 = 0ULL;
+	bl33_image_ep_info.args.arg2 = 0ULL;
+	bl33_image_ep_info.args.arg3 = 0ULL;
+# endif /* RPI3_BL33_IN_AARCH32 */
+#endif /* RPI3_DIRECT_LINUX_BOOT */
 }
 
 ```
@@ -520,12 +548,12 @@ bl31-bl32.bin
 cmdline.txt
 config.txt
 ```
-Procced and insert the SD card into the RPI4.
+Proceed and insert the SD card into the RPI4.
 
 ## 6.2 Stablish serial port comunication
 
-For us too see the log messages of OPTEE inside the RPI4 we need to watch the UART serial port, since these messages are not shown on the regular interface on the RPI4.
-For this we can use either PuTTY or picocom. We will be using picocom but it doesnt make much difference to use one or the other.
+For us to see the log messages of OPTEE inside the RPI4 we need to watch the UART serial port, since these messages are not shown on the regular interface of the RPI4.
+For this we can use either PuTTY or Picocom. We will be using Picocom but it doesn't make much difference to use one or the other.
 
 This section will require the FTDI cable. Follow the instructions on the image bellow to connect it properly:
 
@@ -536,7 +564,6 @@ Once you have plugged the cable to both your PC's usb port and to the pins on th
 
 ```
 sudo apt install picocom
-
 ```
 In order to get to work, we must add the permission to the dialog user, even using with sudo:
 ```
@@ -585,7 +612,7 @@ Terminal ready
 
 If you dont have a extra monitor, or just want the flexibilty SSH allows to have, we'll need to configure a SSH conection with the RPI4. (It's worth it!)
 
-First grab your RJ45 and plug it into both the RPI4 and your computer.
+First grab your RJ45 and plug it into both the RPI4 and your computer. And turn on the RPI4. A new ethernet connection should be detected.
 
 In your PC go to (or similar):
 ```
@@ -599,7 +626,7 @@ Then install isc-dhcp-server and start the service:
 sudo apt install isc-dhcp-server
 sudo systemctl restart isc-dhcp-server.service
 ```
-Now go ahead and remove the Ethernet and connect again.
+Now go ahead and turn of the RPI4.
 
 You will also need a SSH service running on your PC. 
 ```
