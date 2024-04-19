@@ -62,13 +62,36 @@ We should see ```configuration written to /.../OPTEE-RPI4/buildroot/.config```.
 
 ## 1.2 Configuring the build
 
+First we gotta create a kernel configuration fragment file, ```kernel-optee.cfg```.
+
+```
+mkdir linux-rpi
+cd linux-rpi/
+touch kernel-optee.cfg
+```
+Then open it and edit its contents to (the file is also available [here](link)):
+```
+CONFIG_TEE=y
+CONFIG_OPTEE=y
+```
+Save and close.
+
 Run the next command to bring the graphical interface for our build:
 ```
+cd ../
 make menuconfig
 ```
 Here we are gonna select the main configuration of our build. Your terminal should look something like this: 
 
 IMAGE IMAGE IMAGE
+
+- Set the Additional configuration fragment files
+```
+Kernel ==> Additional configuration fragment files --> /.../OPTEE-RPI4/buildroot/linux-rpi/kernel-optee.cfg
+```
+Make sure to change it to the full path of your working directory.
+
+You can go back to the main menu pressing ```ESC``` twice.
 
 - Disable getty
 ```
@@ -80,8 +103,6 @@ System Configuration ==> Run a getty (login prompt) after boot --> No
 System Configuration ==> Root password -> <Password>
 ```
 **Note:** Change \<Password\> with desired string (If using locally, try to avoid any keyboard config issues on the RPI by keeping it simple).
-
-You can go back to the main menu pressing ```ESC``` twice.
 
 - Enable **DHCP** and **Dropbear**:
 ```
