@@ -389,7 +389,7 @@ First we need to create a .dts file. Just like [this](link).
 ```
 touch optee-fix.dts
 ```
-After copy this code:
+Then, open it and copy this code:
 ```
 /dts-v1/;
 /plugin/;
@@ -411,12 +411,12 @@ After copy this code:
 ```
 Now we gotta compile it using the RPI4's device tree compiler. Make sure to change the commands to the correct directory.
 ```
-cd buildroot/output/build/linux-custom/scripts/dts
-./dtc .../OPTEE-RPI4/optee-fix.dts > .../OPTEE-RPI4/optee-fix.dtbo
+cd buildroot/output/build/linux-custom/scripts/dtc
+./dtc /.../OPTEE-RPI4/optee-fix.dts > /.../OPTEE-RPI4/optee-fix.dtbo
 cd ../../../../../../
 ls
 ```
-You should see a new file named ```optee-fix.dtbo```. 
+You should see a new file named ```optee-fix.dtbo```. It is a binary jut like [this](link).
 
 Now we are going to copy this file over to the firmware overlays on the RPI4. So that it can be run once we define it on the `config.txt` file.
 ```
@@ -425,7 +425,7 @@ cp optee-fix.dtbo buildroot/output/images/rpi-firmware/overlays/
 
 ## 5.2 Edit config.txt and cmdline.txt
 
-First we are going to create both the config.txt and cmd.txt files. Note that this already exist inside the ```images/``` directory on build root, we can also just directly edit them, but for safekeeping we'll copy them over to the directory.
+First we are going to create both the ```config.txt``` and ```cmd.txt``` files. Note that this already exist inside the ```images/``` directory on build root, we can also just directly edit them, but for safekeeping we'll copy them over to the directory.
 
 ```
 touch config.txt
@@ -478,14 +478,14 @@ Here we also copy ```bl31-bl32.bin``` as we just definied it on the ```config.tx
 ```
 cp bl31-bl32.bin buildroot/output/images/rpi-firmware/
 ```
-***Note:***: Notice that this is the same directory with the ```overlays/``` directory we copied the .dtbo fix to.
+***Note:*** Notice that this is the same directory with the ```overlays/``` directory we just copied the .dtbo fix to. We will also be able to see this exact directory on our SD card.
 
-Now that we have done all this changes we need to re-build the image.
+Now that we have done all this changes we need to re-build the linux image for the RPI4.
 ```
 cd buildroot/
 make -j$(nproc)
 ```
-Don't worry! This time should only take some seconds to finish.
+Don't worry! This time should only take some minutes to finish.
 
 And thats it, our RPI4 is ready to be flashed!
 
@@ -493,7 +493,7 @@ And thats it, our RPI4 is ready to be flashed!
 
 ## 6.1 Flashing the SD card
 
-Remove the SD card and insert it into the computer. Make sure to backup any important data as we are about to permanently delete anything and everything inside the SD card. 
+Remove the SD card from the RPI4 and insert it into your computer. Make sure to backup any important data as we are about to permanently delete anything and everything inside the SD card. 
 
 Once you are sure there nothing valuable, find your SD card using:
 ```
