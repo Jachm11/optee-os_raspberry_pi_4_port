@@ -647,7 +647,7 @@ Then install isc-dhcp-server and start the service:
 sudo apt install isc-dhcp-server
 sudo systemctl restart isc-dhcp-server.service
 ```
-Now go ahead and turn of the RPI4.
+Now go ahead and turn off the RPI4.
 
 You will also need a SSH service running on your PC. 
 ```
@@ -1090,12 +1090,12 @@ In my case it looks like this:
 ? ...
 ? ...
 ```
-This means the IP is ```10.42.0.66```.
+This means the IP is ```10.42.0.66```. Then run:
 ```
 ssh root@10.42.0.66
 ```
 
-Then run:
+You will see something like this:
 ```
 The authenticity of host '10.42.0.66 (10.42.0.66)' can't be established.
 ED25519 key fingerprint is SHA256:Zt9noffr7lDxHmoxv8jt5FOxWsgYrWwSx+eHsYBqTZU.
@@ -1138,8 +1138,7 @@ IGNORE IF USING SSH
 Now lets test optee, over on the rpi4 or SSH conection type:
 
 ```
-#
-# optee_example_hello_world
+optee_example_hello_world
 ```
 On the RPI4 you should see:
 ```
@@ -1161,7 +1160,7 @@ I/TA: Increase value to: 43
 I/TA: Goodbye!
 D/TA:  TA_DestroyEntryPoint:50 has been called
 ```
-Thats our hello world! (Easy,right?)
+Thats our hello world! (Easy, right?)
 
 Enjoy your RPI4 with OP-TEE. 
 
