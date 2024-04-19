@@ -40,6 +40,11 @@ sudo apt install libncurses5 libncurses5-dev
 sudo apt install python3
 ```
 
+We will also need curl later on: 
+```
+sudo apt install curl
+```
+
 Once every dependency has been installed we can clone the buildroot repo:
 ```
 git clone git://git.buildroot.net/buildroot 
@@ -269,18 +274,17 @@ Open the ```platform_config.h``` file (also [here](link)). Two things must be ch
 
 # Step 4: Compile the ARM Trusted Firmware and the Trusted OS
 
-First we need the right ARM aarch64 toolchains. Check [Toolchains](https://optee.readthedocs.io/en/latest/building/toolchains.html)
+First we need the right ARM aarch64 toolchains. As detailed in [OPTEE Toolchains](https://optee.readthedocs.io/en/latest/building/toolchains.html).
 
 Go back to the OPTEE-RPI4 directory and download the toolchain:
 ```
 cd ../../../../../
-mkdir toolchains
-cd toolchains/
-wget https://developer.arm.com/-/media/Files/downloads/gnu-a/8.2-2019.01/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
-mkdir aarch64
-tar xf gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz -C aarch64 --strip-components=1
+git clone https://github.com/OP-TEE/build.git
+cd build/
+make -f toolchain.mk -j2
+cd ../
 ```
-Now we need to add this new binaries to our ```PATH```:
+Now we need to add this new toolchain binaries to our ```PATH```:
 
 Run:
 ```
@@ -290,7 +294,6 @@ Make sure to change it to your working directory path.
 
 Then create and copy [this](link) makefile on your OPTEE-RPI4 working directory.
 ```
-cd ../
 touch Makefile
 ```
 Open the make file and copy this. Be sure to change the ```DIR := ``` statement to the path of your working directory, in my case I used Documents:
@@ -347,14 +350,16 @@ clean:
 	
 	@echo "Success"
 ```
+Save and close the file.
 
 You can run ```ls``` and check your dictectory looks like this:
 ```
-arm-trusted-firmware
-buildroot
+/arm-trusted-firmware
+/build
+/buildroot
 Makefile
-optee_os
-toolchains
+/optee_os
+/toolchains
 ```
 
 Then simply run: 
@@ -365,6 +370,8 @@ This Makefile is responsible to not only to compile the ARM Trusted Firmware and
 
 When it finishes correctly you should see this on your terminal:
 ```
+...
+...
 Success
 ```
 And a new file named ```bl31-bl32.bin```. I have uploaded mine [here](link).
