@@ -85,7 +85,7 @@ make menuconfig
 ```
 Here we are gonna select the main configuration of our build. Your terminal should look something like this: 
 
-IMAGE IMAGE IMAGE
+[Menuconfig](https://github.com/Jachm11/optee-os_raspberry_pi_4_port/blob/main/images/menuconfig.png)
 
 - Set the Additional configuration fragment files
 ```
