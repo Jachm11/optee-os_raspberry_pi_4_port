@@ -16,6 +16,8 @@ The same applies to the RPI4 as to the RPI3: This port of TF-A and OP-TEE OS is 
 
 That repository has a amazingly detailed explanation of everything we'll be doing on the next steps, it is recomended to read the repository before proceeding, so that you understand the things we are doing and isn't just a mindless copy/paste. It is not necessary to follow any of the steps as this repository already does that. 
 
+If you care for non of this and blindly trust strangers on the internet I have also made the linux SD image available [here](link). With this you can jump right to step 6 of this guide.
+
 # Step 1: Generate the rich operating system 
 
 ## 1.1 Installing buildroot
@@ -69,7 +71,7 @@ mkdir linux-rpi
 cd linux-rpi/
 touch kernel-optee.cfg
 ```
-Then open it and edit its contents to (the file is also available [here](link)):
+Then open it and paste this (the file is also available [here](https://github.com/Jachm11/optee-os_raspberry_pi_4_port/blob/main/kernel-optee.cfg)):
 ```
 CONFIG_TEE=y
 CONFIG_OPTEE=y
@@ -202,7 +204,7 @@ You should see several files, one of which should be ```rpi4_bl31_setup.c```.
 
 Go ahead and open ```rpi4_bl31_setup.c``` and navigate to the ```bl31_early_platform_setup2``` function:
 
-Replace the function with the following code (or copy the whole file on this repo [here](link)): 
+Replace the function with the following code (or copy the whole file on this repo [here](https://github.com/Jachm11/optee-os_raspberry_pi_4_port/blob/main/rpi4_bl31_setup.c)): 
 ```
 void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 				u_register_t arg2, u_register_t arg3)
@@ -313,7 +315,7 @@ ls
 ```
 Now, you should see four files ```conf.mk```,```main.c```,```platform_config.h``` and ```sub.mk```.
 
-Open the ```platform_config.h``` file (also [here](link)). Two things must be changed in the file: the UART base address and the UART Clock Frequency, like so:
+Open the ```platform_config.h``` file (also [here](https://github.com/Jachm11/optee-os_raspberry_pi_4_port/blob/main/platform_config.h)). Two things must be changed in the file: the UART base address and the UART Clock Frequency, like so:
 
 ```
 #define CONSOLE_UART_BASE	0xfe215040 /* UART0 */
@@ -341,7 +343,7 @@ export PATH=/.../OPTEE-RPI4/toolchains/aarch64/bin:$PATH
 ```
 Make sure to change it to your working directory path.
 
-Then create and copy [this](link) makefile on your OPTEE-RPI4 working directory.
+Then create and copy [this](https://github.com/Jachm11/optee-os_raspberry_pi_4_port/blob/main/Makefile) makefile on your OPTEE-RPI4 working directory.
 ```
 touch Makefile
 ```
@@ -423,7 +425,7 @@ When it finishes correctly you should see this on your terminal:
 ...
 Success
 ```
-And a new file named ```bl31-bl32.bin```. I have uploaded mine [here](link).
+And a new file named ```bl31-bl32.bin```. I have uploaded mine [here](https://github.com/Jachm11/optee-os_raspberry_pi_4_port/blob/main/bl31-bl32.bin).
 
 (This file goes into the RPI4 along side the ```cmd.txt``` and the ```config.txt``` file. We do this later on step 5)
 
@@ -433,7 +435,7 @@ And a new file named ```bl31-bl32.bin```. I have uploaded mine [here](link).
 
 For some still unknown reason this configuration fails to load OPTEE into the device tree at boot time. This means we need to manually fix it. 
 
-First we need to create a .dts file. Just like [this](link).
+First we need to create a .dts file. Just like [this](https://github.com/Jachm11/optee-os_raspberry_pi_4_port/blob/main/optee-fix.dts).
 
 ```
 touch optee-fix.dts
@@ -465,7 +467,7 @@ cd buildroot/output/build/linux-custom/scripts/dtc
 cd ../../../../../../
 ls
 ```
-You should see a new file named ```optee-fix.dtbo```. It is a binary jut like [this](link).
+You should see a new file named ```optee-fix.dtbo```. It is a binary just like [this](https://github.com/Jachm11/optee-os_raspberry_pi_4_port/blob/main/optee-fix.dtbo).
 
 Now we are going to copy this file over to the firmware overlays on the RPI4. So that it can be run once we define it on the `config.txt` file.
 ```
@@ -480,7 +482,7 @@ First we are going to create both the ```config.txt``` and ```cmd.txt``` files. 
 touch config.txt
 touch cmdline.txt
 ```
-Now open ```config.txt``` and copy these contents, so it looks like [this](link):
+Now open ```config.txt``` and copy these contents, so it looks like [this](https://github.com/Jachm11/optee-os_raspberry_pi_4_port/blob/main/config.txt):
 
 ```
 # Enable UART
@@ -512,7 +514,7 @@ device_tree_end=0x2bd10f00
 initramfs rootfs.cpio.gz 0x2bd10f00
 ```
 
-Now we do the same for cmdline.txt. [Here](link):
+Now we do the same for cmdline.txt. [Here](https://github.com/Jachm11/optee-os_raspberry_pi_4_port/blob/main/cmdline.txt):
 ```
 root=/dev/mmcblk0p2 rootwait console=tty1 console=ttyS0,115200
 ```
