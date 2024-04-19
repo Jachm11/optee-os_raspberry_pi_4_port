@@ -1164,6 +1164,8 @@ Thats our hello world! (Easy, right?)
 
 Enjoy your RPI4 with OP-TEE. 
 
+**Note:** You can terminate picocom with ```ctrl+a``` and then ```ctrl + x```. As for the SSH session you can terminate it with the command ```exit```.
+
 Once again:
 ***Disclaimer!***
 
