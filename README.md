@@ -16,7 +16,7 @@ The same applies to the RPI4 as to the RPI3: This port of TF-A and OP-TEE OS is 
 
 That repository has a amazingly detailed explanation of everything we'll be doing on the next steps, it is recomended to read the repository before proceeding, so that you understand the things we are doing and isn't just a mindless copy/paste. It is not necessary to follow any of the steps as this repository already does that. 
 
-If you care for non of this and blindly trust strangers on the internet I have also made the linux SD image available [here](https://github.com/Jachm11/optee-os_raspberry_pi_4_port/blob/main/sdcard.img). With this you can jump right to step 6 of this guide.
+If you care for non of this and blindly trust strangers on the internet I have also made the linux SD image available [here](https://github.com/Jachm11/optee-os_raspberry_pi_4_port/blob/main/sdcard.img). With this you can jump right to step 6 of this guide. Root password is: 1234
 
 # Step 1: Generate the rich operating system 
 
